@@ -361,7 +361,7 @@ class Goods extends Util {
 			let t1 = await GoodsModel.find(queryObj, {
 				"_id": 0,
 				"__v": 0
-			}).limit(limit).sort({
+			}).limit(Number(limit)).sort({
 				id: -1
 			}).skip(skip);
 			res.send({

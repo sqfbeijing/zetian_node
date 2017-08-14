@@ -194,7 +194,7 @@ class Admin extends Util {
 				"username": 1,
 				"id": 1,
 				"_id": 0
-			}).limit(limit).sort({
+			}).limit(Number(limit)).sort({
 				id: -1
 			}).skip(skip);
 			res.send({
