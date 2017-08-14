@@ -4,9 +4,6 @@ class Authorize {
 	constructor(){}
 
 	async admin(req, res, next) {
-		console.log("09:321");
-		console.log(req.session.admin);
-		console.log(req.sessionID);
 		if (!req.session.admin) {
 			res.send({
 				status: 0,

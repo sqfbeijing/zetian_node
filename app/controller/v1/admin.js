@@ -73,9 +73,7 @@ class Admin extends Util {
 
 	async signin(req, res, next) {
 		let username, password;
-
-		console.log("09:34");
-		console.log(req.session.admin);
+		
 		if (req.session.admin) {
 			res.send({
 				status: 0,
@@ -205,9 +203,10 @@ class Admin extends Util {
 				data: u1
 			});
 		} catch (e) {
+			console.log(e);
 			res.send({
 				status: 0,
-				type: "SIGNOUT_FAIL",
+				type: "QUERY_ADMIN_FAIL",
 				message: '查询管理员账户失败'
 			});
 		}
@@ -270,12 +269,13 @@ class Admin extends Util {
 					let admin = await AdminModel.findOne({
 						id
 					});
-					let previous_avatar_url = admin.avatar_url;
+					let previous_avatar_url = admin.avatar_url.match(/\/images.*$/)[0]; // 截取到原先的数据库的路径
 					admin.avatar_url = avatar_url;
 					await admin.save();
-					//删除服务器上旧头像(网络图片没法删除)
-					await self.removeFile(path.join(__dirname, "../../", previous_avatar_url));
-
+					//删除数据库中旧头像
+					if (previous_avatar_url.indexOf("default") === -1) {
+						await self.removeFile(path.join(__dirname, "../../public/", previous_avatar_url));
+					}
 					res.send({
 						status: 1,
 						message: '上传头像成功',
@@ -283,6 +283,7 @@ class Admin extends Util {
 					});
 				} catch (e) {
 					console.log('服务器异常，上传头像失败');
+					console.log(e.message);
 					res.send({
 						status: 0,
 						type: "UPLOAD_AVATAR_FAIL",

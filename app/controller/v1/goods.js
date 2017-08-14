@@ -186,13 +186,9 @@ class Goods extends Util {
 				// console.log(temppath);
 				//存放到服务器的新的路径
 				let str = self.MD5(files.detail_image.name + Math.random());
-				// console.log(str);
 				let newpath = path.join(__dirname, "../../public/images/goods/detail", str + extname).replace(/\\/g, '/');
-				// console.log(newpath);
 				// 返回给前端的路径
-				// let detail_image_url = path.join(self.getServerStaticPath(), newpath.slice(newpath.indexOf('/images')));
 				let detail_image_url = self.getServerStaticPath() + newpath.slice(newpath.indexOf('/images'));
-				// console.log(detail_image_url);
 				//改名
 				await self.rename(temppath, newpath);
 				res.send({
