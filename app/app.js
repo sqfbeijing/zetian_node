@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import favicon from 'serve-favicon';
+import compression from 'compression';
 import logger from 'morgan';
 import config from 'config-lite';
 import cookieParser from 'cookie-parser'; //废弃，express-session实现
@@ -12,6 +13,7 @@ import mongoose from "mongoose"
 import db from "./mongodb/db.js"; // 自动执行此文件
 
 var app = express();
+app.use(compression());
 app.all('*', (req, res, next) => {
 	res.header("Access-Control-Allow-Origin", req.headers.origin || '*'); // 这很重要
 	// res.header("Access-Control-Allow-Origin", '*');
@@ -46,8 +48,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.engine('.html', require('ejs').__express);
 app.set('view engine', 'html');
 
-// uncomment after placing your favicon in /public
-//app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
+app.use(favicon(path.join(__dirname, 'favicon.ico')));
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
