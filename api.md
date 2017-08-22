@@ -195,6 +195,37 @@ POST /api/v1/goods_categories
 	}
 }
 ```
+###7.1 删除商品分类及分类下的商品
+> 一次只能删除一个分类
+
+#### 请求URL
+```
+POST /api/v1/goods_categories/:category_name/delete
+```
+#### 参数类型:
+
+参数|是否必选|类型|备注
+---|---|---|---
+
+#### 返回示例
+
+```
+{
+	"status": 1,
+	"message": "删除分类成功",
+	"data": {
+		"categories": {
+			"ok": 1,
+			"n": 1
+		},
+		"goods": {
+			"ok": 1,
+			"n": 0
+		}
+	}
+}
+```
+
 ###8.查询商品分类(所有的)
 
 #### 请求URL

@@ -258,6 +258,8 @@ class Admin extends Util {
 				//存放到服务器的新的路径
 				let str = self.MD5(files.avatar.name + Math.random());
 				let newpath = path.join(__dirname, "../../public/images/admin/avatar/upload", str + extname).replace(/\\/g, '/');
+				// 存储到七牛
+				await self.uploadQiniu(newpath);
 				// 返回给前端的路径
 				let avatar_url = self.getServerStaticPath() + newpath.slice(newpath.indexOf('/images'));
 

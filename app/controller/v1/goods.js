@@ -53,9 +53,11 @@ class Goods extends Util {
 			inventory = 0, // 库存
 			tags = [],
 			image_url,
-			description = ''
+			description = ""
 		} = req.body;
-
+		
+		description = description.trim();
+		if (!description) {description = "暂无描述";}
 		try {
 			if (name === undefined || serial_number === undefined || unit === undefined || price === undefined || category_name === undefined || putaway_time === undefined || store === undefined || warehouse === undefined || image_url === undefined) {
 				throw new Error('商品信息不完整，添加失败');

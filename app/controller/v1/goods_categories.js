@@ -1,4 +1,5 @@
 import Goods_categoryModel from "../../models/v1/goods_category.js"
+import GoodsModel from "../../models/v1/goods.js"
 import Util from "../../tools/util.js"
 import path from "path"
 import fs from "fs"
@@ -10,6 +11,7 @@ class Goods_category extends Util {
 		this.count = this.count.bind(this);
 		this.getCategories = this.getCategories.bind(this);
 	}
+
 	async add_category(req, res, next) { // 添加一个分类
 		let self = this;
 		let category_name = req.body.category_name;
@@ -68,6 +70,7 @@ class Goods_category extends Util {
 			})
 		}
 	}
+
 	async count(req, res, next) { // 查询分类的数量
 		try {
 			const count = await Goods_categoryModel.count({});
@@ -84,6 +87,7 @@ class Goods_category extends Util {
 			});
 		}
 	}
+
 	async getCategories(req, res, next) { // 获取所有的商品分类
 		try {
 			let categories = await Goods_categoryModel.find({}, {
@@ -104,6 +108,35 @@ class Goods_category extends Util {
 				message: '查询分类失败'
 			});
 		}
+	}
+
+	async deleteCategory(req, res, next) { // 删除商品分类 以及 分类下的所有商品
+		let category_name = req.params.category_name;
+		try {
+			let t1 = await Goods_categoryModel.remove({
+				category_name
+			});
+			let t2 = await GoodsModel.remove({
+				category_name
+			});
+			res.send({
+				status: 1,
+				message: '删除分类成功',
+				data: {
+					categories: t1,
+					goods: t2
+				}
+			});
+		} catch (e) {
+			console.log("删除分类及其分类下的商品失败", e.message);
+			res.send({
+				status: 0,
+				type: "DELETE_GOODS_CATEGORIES_FAIL",
+				message: '删除分类及其分类下的商品失败'
+			});
+		}
+
+
 	}
 }
 

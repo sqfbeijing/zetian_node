@@ -38,7 +38,10 @@ let goods = Schema({
 	}, // 库存
 	tags: Array, // 标签， 名称， string类型
 	image_url: String, // 唯一的图片标示url
-	description: String
+	description: {
+		type: String,
+		default: "暂无描述"
+	}
 });
 
 let Goods = mongoose.model("Goods", goods);
