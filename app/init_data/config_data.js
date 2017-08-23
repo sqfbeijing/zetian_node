@@ -26,8 +26,8 @@ export const INIT_IDS = {
 };
 
 export const INIT_SUPER_ADMIN_COUNT = {
-	username: 'admin001',
-	password: "37af06275df16526d0b089345ad5fdd0",
+	username: 'zetian561',
+	password: "0427bd0b2551b5a584facfa3d185d5c1",
 	created_time: "2017-07-06T06:39:13.933Z", //iso
 	avatar_url: "http://outiwl5gi.bkt.clouddn.com/images/admin/avatar/default/default1.png",
 	is_super: true // 是否超级管理员

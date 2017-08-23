@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 import path from 'path'
 import Util from "../../tools/util.js"
 
-let default_avatar_url = (new Util()).getServerStaticPath() + "/images/admin/avatar/default/default1.png";
+let default_avatar_url = "http://outiwl5gi.bkt.clouddn.com/images/admin/avatar/default/default1.png";
 
 let Schema = mongoose.Schema;
 let adminSchema = Schema({
