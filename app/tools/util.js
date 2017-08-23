@@ -3,21 +3,24 @@ import Ids from '../models/ids.js'
 import fs from "fs"
 import qiniu from "qiniu"
 import path from "path"
-const ACCESSKEY = "ckDaJM9hItXlHfZbki-0i3-Pjm84bO0MnL7SIaDl";
-const SECRETKEY = "wlorZQA7KieY0y3JFh2i0mogLFDJMnH5iTOXKSbX";
+import {
+	QINIU_INFO,
+	ID_LIST,
+	SERVER_STATIC_PATH_PRODUCTION,
+	SERVER_STATIC_PATH_DEV
+} from "./../init_data/config_data.js"
+
+const ACCESSKEY = QINIU_INFO.ACCESSKEY;
+const SECRETKEY = QINIU_INFO.SECRETKEY;
+const BUCKET = QINIU_INFO.BUCKET;
+const IMAGE_PREFIX = QINIU_INFO.IMAGE_PREFIX;
 
 export default class Util {
 	constructor() {
-		this.idList = [
-		'admin_id',
-		"goods_id",
-		"goods_category_id",
-		"goods_detail_id",
-		"goods_tag_id",
-		"store_id",
-		"warehouse_id"
-		];
-		this.uploadQiniu = this.uploadQiniu.bind(this);
+		this.idList = ID_LIST;
+		this.qiniu = this.qiniu.bind(this);
+		this.getUploadToken = this.getUploadToken.bind(this);
+		this.uploadFile = this.uploadFile.bind(this);
 	}
 
 	/**
@@ -25,10 +28,10 @@ export default class Util {
 	 * @param  {String} text 需要加密的str
 	 * @return {String} 加密完的str
 	 */
-	 MD5(text) {
-	 	if (!text) throw new Error("need a param!");
-	 	return crypto.createHash('md5').update(text).digest('hex');
-	 }
+	MD5(text) {
+		if (!text) throw new Error("need a param!");
+		return crypto.createHash('md5').update(text).digest('hex');
+	}
 
 	//获取id列表
 	async getId(type) {
@@ -47,6 +50,7 @@ export default class Util {
 			throw new Error(err)
 		}
 	}
+
 	async rename(oldname, newname) { // 重命名 | 移动文件
 		try {
 			fs.renameSync(oldname, newname);
@@ -54,6 +58,7 @@ export default class Util {
 			throw new Error("rename失败");
 		}
 	}
+
 	async removeFile(path) { //从硬盘删除某个文件
 		try {
 			fs.unlinkSync(path);
@@ -61,33 +66,57 @@ export default class Util {
 			console.log("removeFile失败");
 		}
 	}
+
 	getServerStaticPath() { // 静态资源文件的绝对根路径
 		console.log("process.env.NODE_ENV", process.env.NODE_ENV);
 		if (process.env.NODE_ENV === "production") {
-			return "http://47.93.227.194:8000/static";
+			return SERVER_STATIC_PATH_PRODUCTION;
 		} else {
-			return "http://127.0.0.1:8000/static";
+			return SERVER_STATIC_PATH_DEV;
 		}
 	}
 
-	async uploadQiniu(localfile_path) {
-		console.log("10:4612");
-		console.log(localfile_path);
-		console.log(__dirname);
-		console.log(path.join(__dirname, "../public/index001.png"));
-		console.log(path.join(__dirname, "./index001.png"));
-		// localfile_path = path.join(__dirname, "../public/index001.png");
-
+	/**
+	 * 存储图片到七牛，并返回外链
+	 * @param {String} localFile 服务器中本地图片的根路径
+	 * @param {String} key 七牛中的文件名（含路径）
+	 * @param {Boolean} isRemainImageInServer 是否保留服务器上的图片
+	 * @return {String} 图片外链
+	 */
+	async qiniu(localFile, key, isRemainImageInServer) {
+		let self = this;
 		try {
-			// mac 
-			var mac = new qiniu.auth.digest.Mac(ACCESSKEY, SECRETKEY);
-			//上传凭证
-			var options = {
-				// scope: bucket
-				scope: "zetian"
-			};
-			var putPolicy = new qiniu.rs.PutPolicy(options);
-			var uploadToken = putPolicy.uploadToken(mac);
+			let outside_link = await self.uploadFile(self.getUploadToken(), key, localFile);
+			if (!isRemainImageInServer) { // 删除
+				fs.unlinkSync(localFile);
+			}
+			return outside_link;
+		} catch (e) {
+			throw new Error(e.message);
+		}
+	}
+
+	//获取上传凭证
+	getUploadToken() {
+		var mac = new qiniu.auth.digest.Mac(ACCESSKEY, SECRETKEY);
+		var options = {
+			scope: BUCKET
+		};
+		var putPolicy = new qiniu.rs.PutPolicy(options);
+		var uploadToken = putPolicy.uploadToken(mac);
+
+		return uploadToken;
+	}
+
+	/**
+	 * 函数的作用
+	 * @param uptoken 上传文件的token
+	 * @param {String} key 七牛中的文件名（含路径）
+	 * @param {String} localFile 服务器中本地图片的根路径
+	 * @return {Promise} 图片外链
+	 */
+	uploadFile(uptoken, key, localFile) {
+		return new Promise((resolve, reject) => {
 			// 配置
 			var config = new qiniu.conf.Config();
 			// 空间对应的机房 华南
@@ -95,25 +124,22 @@ export default class Util {
 			// 文件
 			var formUploader = new qiniu.form_up.FormUploader(config);
 			var putExtra = new qiniu.form_up.PutExtra();
-			var key = 'abc.png'; // 存储到七牛的文件名
 			// 文件上传
-			localfile_path = '/Users/shaoqianfei/Desktop/node/zetian_node/app/public/images/admin/avatar/upload/e9a5a225daab93fe20d35105333591a7.png';
-			formUploader.putFile(uploadToken, key, localfile_path, putExtra, function(respErr,
-			// formUploader.putFile(uploadToken, key, "./index001.png", putExtra, function(respErr,
-			// formUploader.putFile(uploadToken, key, "./public/index001.png", putExtra, function(respErr,
+			formUploader.putFile(uptoken, key, localFile, putExtra, function(respErr,
 				respBody, respInfo) {
 				if (respErr) {
-					throw respErr;
+					reject(respErr);
+					return;
 				}
 				if (respInfo.statusCode == 200) {
-					console.log(respBody);
+					// 删除
+					resolve(IMAGE_PREFIX + respBody.key);
 				} else {
 					console.log(respInfo.statusCode);
 					console.log(respBody);
+					reject(respBody);
 				}
 			});
-		} catch (e) {
-			console.log("上传到七牛异常", e.message);
-		}
+		});
 	}
 }

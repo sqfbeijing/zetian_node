@@ -5,6 +5,10 @@ import Util from "../../tools/util.js"
 import path from "path"
 import formidable from "formidable"
 import fs from "fs"
+import {
+	UPLOAD_GOODS_UNIQUE_LIMIT,
+	UPLOAD_GOODS_DETAIL_LIMIT
+} from "./../../init_data/config_data.js"
 
 class Goods extends Util {
 	constructor() {
@@ -55,9 +59,11 @@ class Goods extends Util {
 			image_url,
 			description = ""
 		} = req.body;
-		
+
 		description = description.trim();
-		if (!description) {description = "暂无描述";}
+		if (!description) {
+			description = "暂无描述";
+		}
 		try {
 			if (name === undefined || serial_number === undefined || unit === undefined || price === undefined || category_name === undefined || putaway_time === undefined || store === undefined || warehouse === undefined || image_url === undefined) {
 				throw new Error('商品信息不完整，添加失败');
@@ -137,6 +143,18 @@ class Goods extends Util {
 					})
 					return;
 				}
+				if (files.avatar.size > UPLOAD_GOODS_UNIQUE_LIMIT) {
+					// 删除图片
+					fs.unlinkSync(files.avatar.path);
+					// 返回状态
+					console.log("图片容量超出限制,上传失败");
+					res.send({
+						status: 0,
+						type: "UPLOAD_IMAGE_FAIL",
+						message: '图片容量超出限制,上传失败'
+					});
+					return;
+				}
 				//拿到扩展名
 				let extname = path.extname(files.avatar.name);
 				//存放到服务器的旧的路径
@@ -144,11 +162,22 @@ class Goods extends Util {
 				//存放到服务器的新的路径
 				let str = self.MD5(files.avatar.name + Math.random());
 				let newpath = path.join(__dirname, "../../public/images/goods/unique", str + extname).replace(/\\/g, '/');
-				// 返回给前端的路径
-				// let avatar_url = path.join(self.getServerStaticPath(), newpath.slice(newpath.indexOf('/images')));
-				let avatar_url = self.getServerStaticPath() + newpath.slice(newpath.indexOf('/images'));
-				//改名
+				//移动图片
 				await self.rename(temppath, newpath);
+				// 存储到七牛, 获得返回给前端的路径
+				let avatar_url;
+
+				try {
+					avatar_url = await self.qiniu(newpath, "images/goods/unique/" + str + extname, false);
+				} catch (e) {
+					console.log("上传到七牛云存储失败", e.message);
+					res.send({
+						status: 0,
+						type: "UPLOAD_QINIU_FAIL",
+						message: '服务器异常，上传到七牛云存储失败'
+					});
+					return;
+				}
 
 				res.send({
 					status: 1,
@@ -180,21 +209,45 @@ class Goods extends Util {
 					});
 					return;
 				}
+
+				if (files.detail_image.size > UPLOAD_GOODS_DETAIL_LIMIT) {
+					// 删除图片
+					fs.unlinkSync(files.detail_image.path);
+					// 返回状态
+					console.log("图片容量超出限制,上传失败");
+					res.send({
+						status: 0,
+						type: "UPLOAD_IMAGE_FAIL",
+						message: '图片容量超出限制,上传失败'
+					});
+					return;
+				}
+
 				//拿到扩展名
 				let extname = path.extname(files.detail_image.name);
-				// console.log(extname);
 				//存放到服务器的旧的路径
 				let temppath = files.detail_image.path;
-				// console.log(temppath);
 				//存放到服务器的新的路径
 				let str = self.MD5(files.detail_image.name + Math.random());
 				let newpath = path.join(__dirname, "../../public/images/goods/detail", str + extname).replace(/\\/g, '/');
-				// 返回给前端的路径
-				let detail_image_url = self.getServerStaticPath() + newpath.slice(newpath.indexOf('/images'));
-				//改名
+				//移动图片
 				await self.rename(temppath, newpath);
-				res.send({
+				// 存储到七牛, 获得返回给前端的路径
+				let detail_image_url;
 
+				try {
+					detail_image_url = await self.qiniu(newpath, "images/goods/detail/" + str + extname, false);
+				} catch (e) {
+					console.log("上传到七牛云存储失败", e.message);
+					res.send({
+						status: 0,
+						type: "UPLOAD_QINIU_FAIL",
+						message: '服务器异常，上传到七牛云存储失败'
+					});
+					return;
+				}
+				
+				res.send({
 					status: 1,
 					message: '上传图片成功',
 					detail_image_url: detail_image_url

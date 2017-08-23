@@ -3,6 +3,9 @@ import Util from "../../tools/util.js"
 import formidable from "formidable"
 import path from "path"
 import fs from "fs"
+import {
+	UPLOAD_ADMIN_AVATAR_SIZE_LIMIT
+} from "./../../init_data/config_data.js"
 
 class Admin extends Util {
 	constructor() {
@@ -73,7 +76,7 @@ class Admin extends Util {
 
 	async signin(req, res, next) {
 		let username, password;
-		
+
 		if (req.session.admin) {
 			res.send({
 				status: 0,
@@ -251,6 +254,18 @@ class Admin extends Util {
 					})
 					return;
 				}
+				if (files.avatar.size > UPLOAD_ADMIN_AVATAR_SIZE_LIMIT) {
+					// 删除图片
+					fs.unlinkSync(files.avatar.path);
+					// 返回状态
+					console.log("图片容量超出限制,上传失败");
+					res.send({
+						status: 0,
+						type: "UPLOAD_IMAGE_FAIL",
+						message: '图片容量超出限制,上传失败'
+					});
+					return;
+				}
 				//拿到扩展名
 				let extname = path.extname(files.avatar.name);
 				//存放到服务器的旧的路径
@@ -258,26 +273,30 @@ class Admin extends Util {
 				//存放到服务器的新的路径
 				let str = self.MD5(files.avatar.name + Math.random());
 				let newpath = path.join(__dirname, "../../public/images/admin/avatar/upload", str + extname).replace(/\\/g, '/');
-				// 存储到七牛
-				await self.uploadQiniu(newpath);
-				// 返回给前端的路径
-				let avatar_url = self.getServerStaticPath() + newpath.slice(newpath.indexOf('/images'));
+				//移动图片
+				await self.rename(temppath, newpath);
+				// 存储到七牛, 获得返回给前端的路径
+				let avatar_url;
+				try {
+					avatar_url = await self.qiniu(newpath, "images/admin/avatar/upload/" + str + extname, false);
+				} catch (e) {
+					console.log("上传到七牛云存储失败", e.message);
+					res.send({
+						status: 0,
+						type: "UPLOAD_QINIU_FAIL",
+						message: '服务器异常，上传到七牛云存储失败'
+					});
+					return;
+				}
 
 				try {
-					//改名
-					await self.rename(temppath, newpath);
 					//更新数据库
 					let id = req.session.admin.id;
 					let admin = await AdminModel.findOne({
 						id
 					});
-					let previous_avatar_url = admin.avatar_url.match(/\/images.*$/)[0]; // 截取到原先的数据库的路径
 					admin.avatar_url = avatar_url;
 					await admin.save();
-					//删除数据库中旧头像
-					if (previous_avatar_url.indexOf("default") === -1) {
-						await self.removeFile(path.join(__dirname, "../../public/", previous_avatar_url));
-					}
 					res.send({
 						status: 1,
 						message: '上传头像成功',

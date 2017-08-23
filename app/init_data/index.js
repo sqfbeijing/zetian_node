@@ -10,6 +10,14 @@ import IdsModel from "../models/ids.js"
 import db from "../mongodb/db.js"
 import mongoose from "mongoose"
 import Util from "../tools/util.js"
+import {
+	INIT_IDS,
+	INIT_SUPER_ADMIN_COUNT,
+	GOODS_TAGS,
+	STORE_NAMES,
+	WAREHOUSES
+} from "./config_data.js"
+
 let util = new Util();
 
 
@@ -54,15 +62,7 @@ class initData {
 	}
 
 	async initIds() {
-		let ids = {
-			admin_id: 0,
-			goods_id: 0,
-			goods_category_id: 0,
-			goods_detail_id: 0,
-			goods_tag_id: 0,
-			store_id: 0,
-			warehouse_id: 0
-		};
+		let ids = INIT_IDS;
 		try {
 			await IdsModel.create(ids);
 			console.log('初始化ids成功');
@@ -74,13 +74,8 @@ class initData {
 	async initAdmin() {
 		try {
 			let id = await util.getId("admin_id");
-			let obj = {
-				username: 'admin001',
-				password: "37af06275df16526d0b089345ad5fdd0", // zetian561 的md5 hex加密
-				id,
-				created_time: "2017-07-06T06:39:13.933Z", //iso
-				is_super: true // 是否超级管理员
-			};
+			let obj = INIT_SUPER_ADMIN_COUNT;
+			obj.id = id;
 			await AdminModel.create(obj);
 			console.log('初始化管理员成功');
 		} catch (e) {
@@ -90,26 +85,14 @@ class initData {
 
 	async initGoods_tag() {
 		try {
-			let id = await util.getId("goods_tag_id");
-			await GoodsTagModel.create({
-				name: "新品",
-				id,
-				created_time: new Date().toISOString()
-			});
-
-			id = await util.getId("goods_tag_id");
-			await GoodsTagModel.create({
-				name: "精品",
-				id,
-				created_time: new Date().toISOString()
-			});
-
-			id = await util.getId("goods_tag_id");
-			await GoodsTagModel.create({
-				name: "热销商品",
-				id,
-				created_time: new Date().toISOString()
-			});
+			for (var i = 0; i < GOODS_TAGS.length; i++) {
+				let id = await util.getId("goods_tag_id");
+				await GoodsTagModel.create({
+					name: GOODS_TAGS[i],
+					id,
+					created_time: new Date().toISOString()
+				});
+			}
 			console.log('初始化商品标签成功');
 		} catch (e) {
 			console.log('初始化商品标签失败', e);
@@ -118,19 +101,14 @@ class initData {
 
 	async initStores() {
 		try {
-			let id = await util.getId("store_id");
-			await StoreModel.create({
-				name: "一环路西段423号",
-				id,
-				created_time: new Date().toISOString()
-			});
-
-			// id = await util.getId("store_id");
-			// await StoreModel.create({
-			// 	name: "商业街2号",
-			// 	id,
-			// 	created_time: new Date().toISOString()
-			// });
+			for (var i = 0; i < STORE_NAMES.length; i++) {
+				let id = await util.getId("store_id");
+				await StoreModel.create({
+					name: STORE_NAMES[i],
+					id,
+					created_time: new Date().toISOString()
+				});
+			}
 			console.log('初始化店铺成功');
 		} catch (e) {
 			console.log('初始化店铺失败', e);
@@ -139,26 +117,14 @@ class initData {
 
 	async initWarehouses() {
 		try {
-			let id = await util.getId("warehouse_id");
-			await WarehouseModel.create({
-				name: "主仓库",
-				id,
-				created_time: new Date().toISOString()
-			});
-
-			id = await util.getId("warehouse_id");
-			await WarehouseModel.create({
-				name: "次仓库",
-				id,
-				created_time: new Date().toISOString()
-			});
-
-			id = await util.getId("warehouse_id");
-			await WarehouseModel.create({
-				name: "特价仓库",
-				id,
-				created_time: new Date().toISOString()
-			});
+			for (var i = 0; i < WAREHOUSES.length; i++) {
+				let id = await util.getId("warehouse_id");
+				await WarehouseModel.create({
+					name: WAREHOUSES[i],
+					id,
+					created_time: new Date().toISOString()
+				});
+			}
 			console.log('初始化库房成功');
 		} catch (e) {
 			console.log('初始化库房失败', e);
